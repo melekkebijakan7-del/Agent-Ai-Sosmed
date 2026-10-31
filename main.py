@@ -28,8 +28,8 @@ def generate_critical_script(policy_topic, revision_notes=None):
     Menghasilkan skrip kritis terhadap kebijakan pemerintah Indonesia.
     Argumen berbasis data, hukum, obyektif, tanpa hoaks & tanpa basa-basi.
     """
-    # Menggunakan model gemini-2.0-flash terbaru
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    # Menggunakan model gemini-2.5-flash
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     prompt = f"""
     Bertindaklah sebagai analis kebijakan publik yang kritis, berbasis data, dan obyektif untuk akun Instagram 'melek.kebijakan.id'.
