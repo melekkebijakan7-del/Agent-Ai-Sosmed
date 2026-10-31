@@ -32,7 +32,7 @@ def generate_critical_script(policy_topic, revision_notes=None):
     
     prompt = f"""
     Bertindaklah sebagai analis kebijakan publik yang kritis, berbasis data, dan obyektif untuk akun Instagram 'melek.kebijakan.id'.
-    Topik Kebijakan: {policy_topic}
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     Tugas:
     1. Buatkan argumentasi penolakan/kontra terhadap kebijakan tersebut secara lugas, tegas, dan TANPA BASA-BASI.
