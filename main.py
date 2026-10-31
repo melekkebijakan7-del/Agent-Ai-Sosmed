@@ -4,12 +4,17 @@ import google.generativeai as genai
 import cloudinary
 import cloudinary.uploader
 
-# Config Environment Variables
+# Configuration & Environment Variables
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 WA_INSTANCE_ID = os.environ.get("WA_INSTANCE_ID")
 WA_API_TOKEN = os.environ.get("WA_API_TOKEN")
 
+# Configuration Instagram Graph API
+IG_ACCOUNT_ID = os.environ.get("INSTAGRAM_ACCOUNT_ID")
+IG_ACCESS_TOKEN = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
+
+# Setup Cloudinary
 cloudinary.config( 
   cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"), 
   api_key = os.environ.get("CLOUDINARY_API_KEY"), 
@@ -20,23 +25,23 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 def generate_critical_script(policy_topic, revision_notes=None):
     """
-    Menghasilkan skrip argumen kontra terhadap kebijakan pemerintah.
-    Argumen didasarkan pada data/hukum mendasar, tanpa basa-basi.
+    Menghasilkan skrip kritis terhadap kebijakan pemerintah Indonesia.
+    Argumen berbasis data, hukum, obyektif, tanpa hoaks & tanpa basa-basi.
     """
     model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = f"""
-    Bertindaklah sebagai analis kebijakan publik yang kritis, berbasis data, dan obyektif.
+    Bertindaklah sebagai analis kebijakan publik yang kritis, berbasis data, dan obyektif untuk akun Instagram 'melek.kebijakan.id'.
     Topik Kebijakan: {policy_topic}
     
     Tugas:
     1. Buatkan argumentasi penolakan/kontra terhadap kebijakan tersebut secara lugas, tegas, dan TANPA BASA-BASI.
-    2. Wajib menyertakan dasar hukum, data statistik, atau dampak ekonomi/sosial yang nyata (dilarang menggunakan informasi palsu/hoaks).
-    3. Tuliskan dalam bentuk Skrip Narasi Video Animasi durasi singkat (30-60 detik) untuk akun Instagram 'melek kebijakan Indonesia'.
+    2. Wajib menyertakan dasar hukum, data statistik, atau dampak nyata (dilarang menggunakan informasi palsu/hoaks).
+    3. Tuliskan dalam bentuk Skrip Narasi Video Animasi durasi singkat (30-60 detik) beserta usulan caption Instagram.
     """
     
     if revision_notes:
-        prompt += f"\n\ncatatan revisi dari pengguna: {revision_notes}. Sesuaikan skrip berdasarkan revisi ini."
+        prompt += f"\n\nCATATAN REVISI PENGGUNA: {revision_notes}. Sesuaikan skrip berdasarkan instruksi revisi ini."
 
     response = model.generate_content(prompt)
     return response.text
@@ -47,7 +52,7 @@ def upload_video_to_cloudinary(video_path_or_url):
         response = cloudinary.uploader.upload_large(
             video_path_or_url,
             resource_type = "video",
-            folder = "melek_kebijakan_indonesia"
+            folder = "melek_kebijakan_id"
         )
         return response.get("secure_url")
     except Exception as e:
@@ -55,16 +60,16 @@ def upload_video_to_cloudinary(video_path_or_url):
         return None
 
 def send_draft_to_whatsapp(chat_id, video_url, script_text):
-    """Mengirimkan draft video dan skrip ke WhatsApp pengguna untuk di-review."""
+    """Mengirimkan draft video animasi & skrip ke WhatsApp pengguna untuk review/revisi."""
     url = f"https://api.green-api.com/waInstance{WA_INSTANCE_ID}/sendFileByUrl/{WA_API_TOKEN}"
     caption = (
-        "🎬 *DRAFT VIDEO ANIMASI BARU*\n"
-        "------------------------------------\n"
+        "🎬 *DRAFT VIDEO ANIMASI MELEK.KEBIJAKAN.ID*\n"
+        "--------------------------------------------------\n"
         f"{script_text}\n\n"
-        "------------------------------------\n"
+        "--------------------------------------------------\n"
         "Balas pesan ini dengan:\n"
-        "1. *ACC* -> Untuk langsung mengunggah ke Instagram 'melek kebijakan Indonesia'.\n"
-        "2. Tuliskan *instruksi revisi* jika ada bagian yang perlu diperbaiki."
+        "1. *ACC* -> Untuk mengunggah otomatis ke akun Instagram @melek.kebijakan.id\n"
+        "2. *Tuliskan revisi* -> Jika ada bagian argumen atau skrip yang ingin diperbaiki."
     )
     payload = {
         "chatId": chat_id,
@@ -76,28 +81,45 @@ def send_draft_to_whatsapp(chat_id, video_url, script_text):
     return requests.post(url, json=payload, headers=headers).json()
 
 def post_to_instagram(video_url, caption):
-    """Fungsi mengunggah otomatis ke akun Instagram melek kebijakan Indonesia."""
-    # Memerlukan Access Token & Account ID dari Meta Developer
-    print(f"Mengunggah video {video_url} ke Instagram 'melek kebijakan Indonesia'...")
-    # Integrasi API Instagram Graph dijalankan setelah konfirmasi ACC
-    return True
+    """Fungsi posting otomatis ke akun Instagram @melek.kebijakan.id via Instagram Graph API."""
+    if not IG_ACCOUNT_ID or not IG_ACCESS_TOKEN:
+        print("Pengunggahan ke Instagram dilewati: Access Token / Account ID belum diset.")
+        return False
+        
+    # 1. Buat Container Media Reel
+    container_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media"
+    container_payload = {
+        'media_type': 'REELS',
+        'video_url': video_url,
+        'caption': caption,
+        'access_token': IG_ACCESS_TOKEN
+    }
+    res_container = requests.post(container_url, data=container_payload).json()
+    creation_id = res_container.get('id')
+    
+    if creation_id:
+        # 2. Publish Container Media
+        publish_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media_publish"
+        publish_payload = {
+            'creation_id': creation_id,
+            'access_token': IG_ACCESS_TOKEN
+        }
+        res_publish = requests.post(publish_url, data=publish_payload).json()
+        print(f"Status Posting Instagram @melek.kebijakan.id: {res_publish}")
+        return True
+    return False
 
 if __name__ == "__main__":
-    print("Agent AI 'Melek Kebijakan Indonesia' Aktif...")
+    print("Agent AI 'melek.kebijakan.id' Berjalan...")
     
-    # 1. Contoh Penentuan Topik Kebijakan Terbaru
-    topik = "Kebijakan Impor Beras saat Musim Panen Raya"
+    # 1. Riset & Pembuatan Skrip Kritis
+    topik_kebijakan = "Evaluasi Kebijakan Impor Pangan Saat Musim Panen"
+    skrip_narasi = generate_critical_script(topik_kebijakan)
+    print("Skrip Argumen Kritis Berhasil Dibuat.")
     
-    # 2. Pembuatan Skrip Kritis Basah-Data
-    skrip_narasi = generate_critical_script(topik)
-    print("Skrip Kritis Berhasil Disusun.")
-    
-    # 3. Contoh URL Video Hasil Generator Animasi
+    # 2. Pengolahan & Upload Video Animasi
     sample_video_url = "https://res.cloudinary.com/demo/video/upload/dog.mp4"
     uploaded_url = upload_video_to_cloudinary(sample_video_url)
     
     if uploaded_url:
-        print("Video berhasil diproses dan dikirim ke WhatsApp untuk peninjauan.")
-        # Masukkan nomor WhatsApp Anda (Format: 628xxxxxxxxxx@c.us)
-        # my_whatsapp = "628xxxxxxxxxx@c.us"
-        # send_draft_to_whatsapp(my_whatsapp, uploaded_url, skrip_narasi)
+        print(f"Video Animasi Berhasil Diunggah ke Cloudinary: {uploaded_url}")
