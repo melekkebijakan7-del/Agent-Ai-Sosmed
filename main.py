@@ -5,6 +5,7 @@ import requests
 import google.generativeai as genai
 import cloudinary
 import cloudinary.uploader
+from bs4 import BeautifulSoup
 
 # ==============================================================================
 # 0. KONFIGURASI ENVIRONMENT & AKSES GRATIS (Free Tier APIs)
@@ -17,6 +18,9 @@ WA_API_TOKEN = os.environ.get("WA_API_TOKEN")
 # Instagram Graph API Keys
 IG_ACCOUNT_ID = os.environ.get("INSTAGRAM_ACCOUNT_ID")
 IG_ACCESS_TOKEN = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
+
+# Nomor WhatsApp Owner (Format Green API: 6282361171427@c.us)
+OWNER_WA_NUMBER = "6282361171427@c.us"
 
 # Setup Cloudinary Media Storage (Free 25GB)
 cloudinary.config(
@@ -123,7 +127,7 @@ def manager_agent_send_whatsapp(chat_id, video_url, script_text):
     """
     Mengirimkan laporan draft video animasi + skrip ke WhatsApp Owner.
     """
-    print("📱 [MANAGER AGENT] Mengirimkan draft ke WhatsApp Owner untuk review...")
+    print(f"📱 [MANAGER AGENT] Mengirimkan draft ke WhatsApp Owner ({chat_id}) untuk review...")
     url = f"https://api.green-api.com/waInstance{WA_INSTANCE_ID}/sendFileByUrl/{WA_API_TOKEN}"
     
     caption = (
@@ -143,7 +147,9 @@ def manager_agent_send_whatsapp(chat_id, video_url, script_text):
         "caption": caption
     }
     headers = {'Content-Type': 'application/json'}
-    return requests.post(url, json=payload, headers=headers).json()
+    res = requests.post(url, json=payload, headers=headers).json()
+    print(f"Status Pengiriman WhatsApp: {res}")
+    return res
 
 
 # ==============================================================================
@@ -210,6 +216,5 @@ if __name__ == "__main__":
     # 5. Notifikasi Manager Agent ke WhatsApp Owner
     if video_ready_url:
         print(f"✨ Video Animasi Siap di Cloud Storage: {video_ready_url}")
-        # Masukkan nomor WhatsApp Owner (contoh format: 6281234567890@c.us)
-        # owner_wa = "628xxxxxxxxxx@c.us"
-        # manager_agent_send_whatsapp(owner_wa, video_ready_url, skrip_final)
+        # Mengirimkan otomatis draft skrip dan video ke WhatsApp Owner
+        manager_agent_send_whatsapp(OWNER_WA_NUMBER, video_ready_url, skrip_final)
