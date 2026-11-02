@@ -22,9 +22,7 @@ cloudinary.config(
     api_secret=os.environ.get("CLOUDINARY_API_SECRET")
 )
 
-# MENGGUNAKAN MODEL TERBARU AGAR TIDAK ERROR 404
 genai.configure(api_key=GEMINI_API_KEY)
-AI_MODEL_NAME = 'gemini-3.0-flash'
 
 
 # ==========================================
@@ -41,15 +39,16 @@ def researcher_agent(topic_query):
         snippets = [f"• {item.get('title')}: {item.get('snippet')}" for item in results.get("organic", [])[:4]]
         return "\n".join(snippets) if snippets else "Data publik & peraturan perundang-undangan relevan."
     except Exception as e:
+        print(f"⚠️ [RESEARCHER] Error riset: {e}")
         return "Riset berdasarkan Laporan Resmi BPS, Putusan MK, dan Naskah Akademik."
 
 
 # ==========================================
-# 2. COPYWRITER AGENT
+# 2. COPYWRITER AGENT (AUTO-FALLBACK MODEL)
 # ==========================================
 def copywriter_agent(topic, research_data):
     print("✍️ [COPYWRITER] Menyusun skrip argumen kritis...")
-    model = genai.GenerativeModel(AI_MODEL_NAME)
+    
     prompt = f"""
     Buatkan skrip Reels kritis (30-60 detik) untuk Instagram @melek.kebijakan.id.
     TOPIK: {topic}
@@ -59,7 +58,23 @@ def copywriter_agent(topic, research_data):
     2. Struktur: Hook menarik, Konteks, Fakta Data, Argumen Kontra Kritis, Alternatif Solusi, CTA.
     3. Sertakan caption dan hashtag di bagian akhir.
     """
-    return model.generate_content(prompt).text
+    
+    # Daftar model resmi Google AI Studio
+    candidate_models = ['gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-1.5-pro']
+    
+    for model_name in candidate_models:
+        try:
+            print(f"🔄 Mencoba dengan model: {model_name}...")
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt)
+            if response and response.text:
+                print(f"✅ Berhasil generate menggunakan model: {model_name}")
+                return response.text
+        except Exception as e:
+            print(f"⚠️ Model {model_name} gagal ({e}), mencoba model berikutnya...")
+            continue
+            
+    raise RuntimeError("Semua cadangan model Gemini gagal merespons.")
 
 
 # ==========================================
@@ -71,7 +86,7 @@ def editor_animator_agent(video_url):
         res = cloudinary.uploader.upload_large(video_url, resource_type="video", folder="melek_kebijakan_id")
         return res.get("secure_url")
     except Exception as e:
-        print(f"Error Editor: {e}")
+        print(f"❌ Error Editor: {e}")
         return None
 
 
