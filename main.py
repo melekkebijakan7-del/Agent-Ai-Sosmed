@@ -26,37 +26,57 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 
 # ==========================================
-# 1. RESEARCHER AGENT
+# 1. RESEARCHER AGENT (Riset Dampak Lapangan)
 # ==========================================
 def researcher_agent(topic_query):
-    print(f"🔍 [RESEARCHER] Riset fakta: '{topic_query}'...")
+    print(f"🔍 [RESEARCHER] Riset fakta & dampak lapangan: '{topic_query}'...")
     url = "https://google.serper.dev/search"
-    payload = json.dumps({"q": f"kebijakan pemerintah {topic_query} site:go.id OR site:bps.go.id OR site:dpr.go.id"})
+    payload = json.dumps({"q": f"dampak kerugian kebijakan {topic_query} masyarakat petani ekonomi bps"})
     headers = {'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json'}
     try:
         response = requests.post(url, headers=headers, data=payload, timeout=10)
         results = response.json()
         snippets = [f"• {item.get('title')}: {item.get('snippet')}" for item in results.get("organic", [])[:4]]
-        return "\n".join(snippets) if snippets else "Data publik & peraturan perundang-undangan relevan."
+        return "\n".join(snippets) if snippets else "Data dampak ekonomi & sosial masyarakat."
     except Exception as e:
-        print(f"⚠️ [RESEARCHER] Error riset: {e}")
-        return "Riset berdasarkan Laporan Resmi BPS, Putusan MK, dan Naskah Akademik."
+        print(f"⚠️ [RESEARCHER] Error: {e}")
+        return "Riset berdasarkan dampak riil penurunan pendapatan masyarakat & harga pasar."
 
 
 # ==========================================
-# 2. COPYWRITER AGENT (OTOMATIS DETEKSI MODEL)
+# 2. COPYWRITER AGENT (Kritis + Dampak Nyata)
 # ==========================================
 def copywriter_agent(topic, research_data):
-    print("✍️ [COPYWRITER] Menyusun skrip argumen kritis...")
+    print("✍️ [COPYWRITER] Menyusun skrip argumen kontra berbasis dampak nyata...")
     
     prompt = f"""
-    Buatkan skrip Reels kritis ringkas (maksimal 150 kata) untuk Instagram @melek.kebijakan.id.
+    Kamu adalah Copywriter Utama akun Instagram @melek.kebijakan.id.
+    Tugasmu menyusun skrip Reels (30-45 detik) yang KONTRA KEBIJAKAN PEMERINTAH, tetapi BERBASIS FAKTA & DAMPAK NYATA.
+
     TOPIK: {topic}
-    FAKTA DATA: {research_data}
-    ATURAN:
-    1. Harus berbasis fakta data, TANPA HOAKS.
-    2. Struktur: Hook menarik, Konteks, Fakta Data, Argumen Kontra Kritis, Alternatif Solusi, CTA.
-    3. Sertakan caption dan hashtag ringkas di akhir.
+    HASIL RISET DAMPAK:
+    {research_data}
+
+    ATURAN KETAT SKRIP:
+    1. DILARANG MENOLAK ASAL-ASALAN: Kritik harus rasional, argumentatif, dan berbasis data.
+    2. WAJIB BERIKAN CONTOH DAMPAK NYATA: Sebutkan secara spesifik siapa yang dirugikan (contoh: harga gabah petani anjlok, beban pajak UMKM meningkat, daya beli buruh turun).
+    3. STRUKTUR NARASI:
+       - HOOK (Memancing rasa ingin tahu)
+       - KONTEKS KEBIJAKAN (Penjelasan singkat aturan pemerintah)
+       - CONTOH DAMPAK NYATA (Kerugian yang langsung dirasakan masyarakat)
+       - ARGUMEN KONTRA KRITIS (Alasan kenapa kebijakan ini keliru)
+       - ALTERNATIF SOLUSI (Langkah konkrit yang seharusnya diambil)
+       - CTA: "Mari kritis bersama @melek.kebijakan.id"
+
+    4. DESKRIPSI VISUAL ANIMASI 3D:
+       Tuliskan 1 deskripsi prompt visual dalam Bahasa Inggris untuk membuat gambar adegan animasi 3D (Gaya Claymation/Toko Karakter 3D seperti anak sekolah di sawah).
+
+    Format Output JSON:
+    {{
+      "script_narasi": "Teks narasi Reels yang akan dibacakan...",
+      "caption_ig": "Teks caption Instagram + Hashtag...",
+      "prompt_visual_3d": "Cute 3D claymation animation style of an Indonesian farmer standing in a dry rice field, highly detailed, vertical 9:16"
+    }}
     """
     
     available_models = []
@@ -65,7 +85,7 @@ def copywriter_agent(topic, research_data):
             if 'generateContent' in m.supported_generation_methods:
                 available_models.append(m.name)
     except Exception as e:
-        print(f"⚠️ Gagal deteksi otomatis: {e}")
+        print(f"⚠️ Deteksi model gagal: {e}")
         
     if not available_models:
         available_models = ['models/gemini-1.5-flash', 'models/gemini-2.5-flash']
@@ -74,44 +94,59 @@ def copywriter_agent(topic, research_data):
         try:
             print(f"🔄 Memakai model: {model_name}...")
             model = genai.GenerativeModel(model_name)
-            response = model.generate_content(prompt)
-            if response and response.text:
-                print(f"✅ Berhasil generate menggunakan model: {model_name}")
-                return response.text
+            res = model.generate_content(prompt)
+            if res and res.text:
+                clean_text = res.text.replace("```json", "").replace("```", "").strip()
+                return json.loads(clean_text)
         except Exception as e:
             print(f"⚠️ Model {model_name} gagal: {e}")
             continue
             
-    raise RuntimeError("Semua model Gemini gagal merespons.")
+    raise RuntimeError("Gagal menghasilkan skrip.")
 
 
 # ==========================================
-# 3. EDITOR & ANIMATOR AGENT
+# 3. EDITOR AGENT (Auto Render Visual 3D)
 # ==========================================
-def editor_animator_agent(video_url):
-    print("🎬 [EDITOR] Upload animasi ke Cloudinary...")
-    try:
-        res = cloudinary.uploader.upload_large(video_url, resource_type="video", folder="melek_kebijakan_id")
-        return res.get("secure_url")
-    except Exception as e:
-        print(f"❌ Error Editor: {e}")
-        return None
+def editor_animator_agent(prompt_visual):
+    print("🎬 [EDITOR] Memproses gambar visual animasi 3D (Claymation Style)...")
+    styled_prompt = f"{prompt_visual}, cute 3D claymation style, vibrant lighting, highly detailed, 9:16 vertical ratio"
+    encoded_prompt = requests.utils.quote(styled_prompt)
+    
+    # URL Generator AI Visual 3D Cloud
+    visual_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=720&height=1280&nologo=true"
+    print(f"🖼️ Visual 3D Siap: {visual_url}")
+    return visual_url
 
 
 # ==========================================
-# 4. MANAGER AGENT (AUTO-TRIM WA CAPTION)
+# 4. MANAGER AGENT (Kirim Laporan WA)
 # ==========================================
-def manager_agent_send_whatsapp(chat_id, video_url, script_text):
-    print(f"📱 [MANAGER] Kirim Laporan ke WA Owner...")
+def manager_agent_send_whatsapp(chat_id, visual_url, content_data):
+    print(f"📱 [MANAGER] Mengirimkan draft ke WhatsApp Owner...")
     url = f"https://api.green-api.com/waInstance{WA_INSTANCE_ID}/sendFileByUrl/{WA_API_TOKEN}"
     
-    caption = f"🏛️ *KANTOR AI: DRAFT REELS BARU*\n\n{script_text}\n\n📌 Balas ACC untuk post, atau tuliskan catatan revisi."
+    script_text = content_data.get("script_narasi", "")
+    caption_ig = content_data.get("caption_ig", "")
     
-    # Batasi panjang caption maksimal 980 karakter agar tidak ditolak WhatsApp (limit 1024)
-    if len(caption) > 980:
-        caption = caption[:975] + "\n\n...[teks dipotong untuk WA]"
+    caption_wa = (
+        f"🏛️ *KANTOR AI MELEK.KEBIJAKAN.ID - DRAFT KONTEN KRITIS*\n"
+        f"--------------------------------------------------\n"
+        f"📜 *SKRIP NARASI REELS:*\n{script_text}\n\n"
+        f"📝 *CAPTION INSTAGRAM:*\n{caption_ig}\n"
+        f"--------------------------------------------------\n"
+        f"📌 Balas *ACC* untuk posting otomatis, atau tuliskan *REVISI: [catatan]*"
+    )
+    
+    if len(caption_wa) > 980:
+        caption_wa = caption_wa[:975] + "\n\n...[teks dipotong untuk WA]"
 
-    payload = {"chatId": chat_id, "urlFile": video_url, "fileName": "draft.mp4", "caption": caption}
+    payload = {
+        "chatId": chat_id,
+        "urlFile": visual_url,
+        "fileName": "draft_visual_3d.jpg",
+        "caption": caption_wa
+    }
     headers = {'Content-Type': 'application/json'}
     res = requests.post(url, json=payload, headers=headers).json()
     print(f"Status WA: {res}")
@@ -119,19 +154,24 @@ def manager_agent_send_whatsapp(chat_id, video_url, script_text):
 
 
 # ==========================================
-# KANTOR AI RUNNER
+# MAIN EXECUTION
 # ==========================================
 if __name__ == "__main__":
     print("==================================================")
     print("🏢 KANTOR AI @melek.kebijakan.id ACTIVE & ONLINE")
     print("==================================================")
     
-    topik_kebijakan = "Evaluasi Kebijakan Impor Pangan"
-    hasil_riset = researcher_agent(topik_kebijakan)
-    skrip_final = copywriter_agent(topik_kebijakan, hasil_riset)
+    topik = "Kebijakan Impor Beras Saat Musim Panen Raya"
     
-    sample_video = "https://res.cloudinary.com/demo/video/upload/dog.mp4"
-    video_ready = editor_animator_agent(sample_video)
+    # 1. Riset Dampak Kerugian
+    data_riset = researcher_agent(topik)
     
-    if video_ready:
-        manager_agent_send_whatsapp(OWNER_WA_NUMBER, video_ready, skrip_final)
+    # 2. Buat Skrip Kritis Berbasis Dampak Nyata
+    content_output = copywriter_agent(topik, data_riset)
+    
+    # 3. Buat Visual Animasi 3D Claymation
+    prompt_3d = content_output.get("prompt_visual_3d", "Cute 3D claymation of Indonesian farmer")
+    visual_ready_url = editor_animator_agent(prompt_3d)
+    
+    # 4. Laporan ke WhatsApp Owner
+    manager_agent_send_whatsapp(OWNER_WA_NUMBER, visual_ready_url, content_output)
