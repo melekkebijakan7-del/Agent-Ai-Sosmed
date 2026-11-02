@@ -28,9 +28,9 @@ cloudinary.config(
     api_secret=os.environ.get("CLOUDINARY_API_SECRET")
 )
 
-# Gemini AI Setup
+# Gemini AI Setup (Menggunakan Model gemini-3.0-flash Terbaru)
 genai.configure(api_key=GEMINI_API_KEY)
-AI_MODEL_NAME = 'gemini-2.5-flash'
+AI_MODEL_NAME = 'gemini-3.0-flash'
 
 
 # ==============================================================================
@@ -66,7 +66,7 @@ def researcher_agent(topic_query):
 # ==============================================================================
 def copywriter_agent(topic, research_data, revision_notes=None):
     """
-    Menyusun skrip Reels (30-60 detik) berbasis formula kritis 6-tahap dari laporan.
+    Menyusun skrip Reels (30-60 detik) berbasis formula kritis 6-tahap.
     """
     print("✍️ [COPYWRITER AGENT] Menyusun skrip argumen kontra tanpa basa-basi...")
     model = genai.GenerativeModel(AI_MODEL_NAME)
@@ -79,7 +79,7 @@ def copywriter_agent(topic, research_data, revision_notes=None):
     DATA / HASIL RISET FAKTA:
     {research_data}
 
-    ATURAN KETAT SKRIP (DOKUMEN KANTOR AI V2):
+    ATURAN KETAT SKRIP:
     1. DILARANG HOAKS/FITNAH: Setiap klaim wajib berbasis fakta data, UU, atau dampak ekonomi nyata.
     2. DILARANG MENYERANG PRIBADI/FISIK PEJABAT: Fokus murni pada isi & dampak kebijakan publik.
     3. STRUKTUR WAKTU & NARASI (30-60 DETIK):
@@ -91,7 +91,7 @@ def copywriter_agent(topic, research_data, revision_notes=None):
        - CALL TO ACTION (CTA): "Ikuti @melek.kebijakan.id untuk membaca kebijakan, bukan hanya ikut marah."
 
     BERIKAN JUGA:
-    - Caption Instagram (Lengkap dengan Hastag: #KebijakanPublik #MelekKebijakan #EkonomiIndonesia)
+    - Caption Instagram (Lengkap dengan Hashtag: #KebijakanPublik #MelekKebijakan #EkonomiIndonesia)
     """
 
     if revision_notes:
