@@ -50,16 +50,15 @@ def copywriter_agent(topic, research_data):
     print("✍️ [COPYWRITER] Menyusun skrip argumen kritis...")
     
     prompt = f"""
-    Buatkan skrip Reels kritis (30-60 detik) untuk Instagram @melek.kebijakan.id.
+    Buatkan skrip Reels kritis ringkas (maksimal 150 kata) untuk Instagram @melek.kebijakan.id.
     TOPIK: {topic}
     FAKTA DATA: {research_data}
     ATURAN:
     1. Harus berbasis fakta data, TANPA HOAKS.
     2. Struktur: Hook menarik, Konteks, Fakta Data, Argumen Kontra Kritis, Alternatif Solusi, CTA.
-    3. Sertakan caption dan hashtag di bagian akhir.
+    3. Sertakan caption dan hashtag ringkas di akhir.
     """
     
-    # Mengambil daftar model yang aktif secara otomatis dari Google API
     available_models = []
     try:
         for m in genai.list_models():
@@ -69,9 +68,7 @@ def copywriter_agent(topic, research_data):
         print(f"⚠️ Gagal deteksi otomatis: {e}")
         
     if not available_models:
-        available_models = ['models/gemini-3.5-flash', 'models/gemini-1.5-flash']
-
-    print(f"📋 Model aktif yang ditemukan di akun Anda: {available_models}")
+        available_models = ['models/gemini-1.5-flash', 'models/gemini-2.5-flash']
 
     for model_name in available_models:
         try:
@@ -102,12 +99,18 @@ def editor_animator_agent(video_url):
 
 
 # ==========================================
-# 4. MANAGER AGENT
+# 4. MANAGER AGENT (AUTO-TRIM WA CAPTION)
 # ==========================================
 def manager_agent_send_whatsapp(chat_id, video_url, script_text):
     print(f"📱 [MANAGER] Kirim Laporan ke WA Owner...")
     url = f"https://api.green-api.com/waInstance{WA_INSTANCE_ID}/sendFileByUrl/{WA_API_TOKEN}"
+    
     caption = f"🏛️ *KANTOR AI: DRAFT REELS BARU*\n\n{script_text}\n\n📌 Balas ACC untuk post, atau tuliskan catatan revisi."
+    
+    # Batasi panjang caption maksimal 980 karakter agar tidak ditolak WhatsApp (limit 1024)
+    if len(caption) > 980:
+        caption = caption[:975] + "\n\n...[teks dipotong untuk WA]"
+
     payload = {"chatId": chat_id, "urlFile": video_url, "fileName": "draft.mp4", "caption": caption}
     headers = {'Content-Type': 'application/json'}
     res = requests.post(url, json=payload, headers=headers).json()
