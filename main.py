@@ -18,10 +18,9 @@ WA_API_TOKEN = os.environ.get("WA_API_TOKEN")
 IG_ACCOUNT_ID = os.environ.get("INSTAGRAM_ACCOUNT_ID")
 IG_ACCESS_TOKEN = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
 
-# Nomor WhatsApp Owner (@melek.kebijakan.id)
+# Nomor WhatsApp Penerima sesuai Dashboard Green API Anda
 OWNER_WA_NUMBER = "6282361171427@c.us"
 
-# Cloudinary Setup (Cloud Media)
 cloudinary.config(
     cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
     api_key=os.environ.get("CLOUDINARY_API_KEY"),
@@ -161,45 +160,15 @@ def editor_animator_agent(prompt_visual):
 
 
 # ==========================================
-# 5. PUBLISHER AGENT (Posting Bertahap: Sosmed -> Website)
+# 5. PUBLISHER AGENT (Posting Website Portal)
 # ==========================================
-def publish_to_social_media(video_or_image_url, caption):
-    """
-    Langkah 1 Eksekusi: Posting ke Instagram & Facebook Reels
-    """
-    print("🚀 [PUBLISHER] Mengunggah konten ke Instagram & Facebook @melek.kebijakan.id...")
-    if not IG_ACCOUNT_ID or not IG_ACCESS_TOKEN:
-        print("⚠️ [PUBLISHER] Credentials Meta belum diset. Melewati posting otomatis sosmed.")
-        return True # Return True untuk lanjut ke langkah website jika token belum diset
-    
-    # Meta Graph API Publishing Logic
-    container_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media"
-    payload = {
-        'image_url': video_or_image_url,
-        'caption': caption,
-        'access_token': IG_ACCESS_TOKEN
-    }
-    res = requests.post(container_url, data=payload).json()
-    creation_id = res.get('id')
-    
-    if creation_id:
-        publish_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media_publish"
-        res_pub = requests.post(publish_url, data={'creation_id': creation_id, 'access_token': IG_ACCESS_TOKEN}).json()
-        print(f"✅ [PUBLISHER] Sukses Tayang di Sosmed! Media ID: {res_pub.get('id')}")
-        return True
-    return False
-
 def publish_to_website_portal(content_data, visual_url, seo_data):
-    """
-    Langkah 2 Eksekusi: Terbitkan ke Situs Portal Berita (Kompas Style)
-    """
     print("📰 [WEB PUBLISHER] Menerbitkan berita ke situs portal melek.kebijakan.id...")
     
     docs_dir = "docs"
     berita_dir = os.path.join(docs_dir, "berita")
     os.makedirs(berita_dir, exist_ok=True)
     
-    # CNAME untuk mengunci Custom Domain
     cname_filepath = os.path.join(docs_dir, "CNAME")
     with open(cname_filepath, "w", encoding="utf-8") as f:
         f.write("melek.kebijakan.id")
@@ -212,7 +181,6 @@ def publish_to_website_portal(content_data, visual_url, seo_data):
     detail_filepath = os.path.join(berita_dir, detail_filename)
     relative_link = f"berita/{detail_filename}"
     
-    # Artikel HTML Detail
     article_html = f"""<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -269,7 +237,6 @@ def publish_to_website_portal(content_data, visual_url, seo_data):
     with open(detail_filepath, "w", encoding="utf-8") as f:
         f.write(article_html)
 
-    # Update Database JSON
     json_db_path = os.path.join(docs_dir, "articles.json")
     articles = []
     if os.path.exists(json_db_path):
@@ -291,7 +258,6 @@ def publish_to_website_portal(content_data, visual_url, seo_data):
     with open(json_db_path, "w", encoding="utf-8") as f:
         json.dump(articles, f, ensure_ascii=False, indent=2)
 
-    # Generate Homepage Portal Berita (index.html)
     cards_html = ""
     for item in articles:
         cards_html += f"""
@@ -359,7 +325,7 @@ def publish_to_website_portal(content_data, visual_url, seo_data):
 
 
 # ==========================================
-# 6. MANAGER AGENT (Rapat Divisi & Kirim Draft ke WA Owner)
+# 6. MANAGER AGENT (Kirim WhatsApp & Deteksi Error)
 # ==========================================
 def manager_agent_send_draft_to_wa(chat_id, visual_url, content_data, seo_data):
     print(f"📱 [MANAGER] Mengirimkan DRAFT LENGKAP ke WhatsApp Owner untuk Peninjauan...")
@@ -391,13 +357,19 @@ def manager_agent_send_draft_to_wa(chat_id, visual_url, content_data, seo_data):
         "caption": caption_wa
     }
     headers = {'Content-Type': 'application/json'}
+    
     res = requests.post(url, json=payload, headers=headers).json()
-    print(f"Status WA: {res}")
+    print(f"Status WA API Response: {res}")
+    
+    if "idMessage" not in res:
+        raise RuntimeError(f"❌ GAGAL KIRIM WHATSAPP! Balasan API: {res}")
+        
+    print("✅ Notifikasi WhatsApp Berhasil Terkirim ke HP Owner!")
     return res
 
 
 # ==========================================
-# MAIN EXECUTION (RAPAT DIVISI / PRODUCTION RUNNER)
+# MAIN EXECUTION
 # ==========================================
 if __name__ == "__main__":
     print("==================================================")
@@ -419,8 +391,8 @@ if __name__ == "__main__":
     prompt_3d = content_output.get("prompt_visual_3d", "Cute 3D claymation of Indonesian farmer")
     visual_ready_url = editor_animator_agent(prompt_3d)
     
-    # 5. Menerbitkan ke Website Portal Berita (Lokal Repo Build)
+    # 5. Menerbitkan ke Website Portal Berita
     publish_to_website_portal(content_output, visual_ready_url, seo_output)
     
-    # 6. Kirim Laporan Draft & Visual ke WA Owner (Rapat Divisi)
+    # 6. Kirim Laporan Draft & Visual ke WA Owner
     manager_agent_send_draft_to_wa(OWNER_WA_NUMBER, visual_ready_url, content_output, seo_output)
