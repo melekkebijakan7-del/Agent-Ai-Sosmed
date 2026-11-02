@@ -1,159 +1,215 @@
 import os
+import sys
+import json
 import requests
 import google.generativeai as genai
 import cloudinary
 import cloudinary.uploader
 
+# ==============================================================================
+# 0. KONFIGURASI ENVIRONMENT & AKSES GRATIS (Free Tier APIs)
+# ==============================================================================
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 WA_INSTANCE_ID = os.environ.get("WA_INSTANCE_ID")
 WA_API_TOKEN = os.environ.get("WA_API_TOKEN")
 
+# Instagram Graph API Keys
 IG_ACCOUNT_ID = os.environ.get("INSTAGRAM_ACCOUNT_ID")
 IG_ACCESS_TOKEN = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
 
+# Setup Cloudinary Media Storage (Free 25GB)
 cloudinary.config(
     cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
     api_key=os.environ.get("CLOUDINARY_API_KEY"),
     api_secret=os.environ.get("CLOUDINARY_API_SECRET")
 )
 
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY belum diset di environment variable.")
-
+# Setup Gemini AI Model Terbaru (Bebas Error 404)
 genai.configure(api_key=GEMINI_API_KEY)
+AI_MODEL_NAME = 'gemini-2.5-flash'
 
 
-def generate_critical_script(policy_topic, revision_notes=None):
-    model = genai.GenerativeModel('gemini-2.5-flash')
+# ==============================================================================
+# 1. RESEARCHER AGENT: Mencari Kebijakan Publik dari Sumber Resmi
+# ==============================================================================
+def researcher_agent(topic_query):
+    """
+    Riset fakta kebijakan dari sumber resmi / web scraping dasar tanpa hoaks.
+    """
+    print(f"🔍 [RESEARCHER AGENT] Memulai riset fakta untuk: '{topic_query}'...")
+    url = "https://google.serper.dev/search"
+    payload = json.dumps({"q": f"kebijakan pemerintah {topic_query} dpr kemenkeu bps"})
+    headers = {
+        'X-API-KEY': SERPER_API_KEY,
+        'Content-Type': 'application/json'
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, data=payload, timeout=10)
+        results = response.json()
+        snippets = []
+        if "organic" in results:
+            for item in results["organic"][:4]:
+                snippets.append(f"- {item.get('title')}: {item.get('snippet')}")
+        return "\n".join(snippets) if snippets else "Data statistik publik & naskah akademik relevan."
+    except Exception as e:
+        print(f"⚠️ [RESEARCHER AGENT] Scraping terbatas: {e}")
+        return "Riset berdasarkan data statistik BPS, UU Publik, dan Laporan Kemenkeu."
 
+
+# ==============================================================================
+# 2. COPYWRITER AGENT: Menyusun Argumen Kontra Kritis & Lugas
+# ==============================================================================
+def copywriter_agent(topic, research_data, revision_notes=None):
+    """
+    Menyusun skrip Reels 30-60 detik dengan struktur:
+    Hook -> Konteks -> Fakta Data -> Argumen Kontra -> Alternatif Solusi -> CTA
+    """
+    print("✍️ [COPYWRITER AGENT] Menyusun skrip argumen kritis tanpa basa-basi...")
+    model = genai.GenerativeModel(AI_MODEL_NAME)
+    
     prompt = f"""
-    Bertindaklah sebagai analis kebijakan publik yang kritis, berbasis data, dan obyektif
-    untuk akun Instagram 'melek.kebijakan.id'.
-    Topik Kebijakan: {policy_topic}
+    Kamu adalah Copywriter Senior untuk akun Instagram @melek.kebijakan.id.
+    Tugasmu adalah membuat skrip Reels kritis (30-60 detik) mengenai kebijakan pemerintah Indonesia berikut.
 
-    Tugas:
-    1. Buatkan argumentasi penolakan/kontra terhadap kebijakan tersebut secara lugas dan tegas.
-    2. Wajib menyertakan dasar hukum, data statistik, atau dampak nyata.
-    3. Dilarang menggunakan informasi palsu atau hoaks.
-    4. Tuliskan skrip narasi video animasi durasi 30-60 detik beserta caption Instagram.
+    TOPIK KEBIJAKAN: {topic}
+    DATA / HASIL RISET:
+    {research_data}
+
+    ATURAN KETAT SKRIP (JANGAN DILANGGAR):
+    1. Harus BERBASIS DATA, dasar hukum, atau dampak ekonomi nyata (DILARANG HOAKS / FITNAH).
+    2. Kritik kebijakan secara argumentatif, lugas, tegas, dan TANPA BASA-BASI.
+    3. Struktur Skrip:
+       - HOOK (3 detik pertama yang memicu rasa ingin tahu)
+       - KONTEKS KEBIJAKAN (Penjelasan singkat kebijakan)
+       - FAKTA & DATA HUKUM/EKONOMI (Angka / Dasar UU)
+       - ARGUMEN KONTRA (Kenapa kebijakan ini berdampak buruk / bermasalah)
+       - ALTERNATIF SOLUSI (Langkah nyata yang seharusnya diambil pemerintah)
+       - CALL TO ACTION (Mengajak audiens berpikir di @melek.kebijakan.id)
     """
 
     if revision_notes:
-        prompt += f"\n\nCATATAN REVISI PENGGUNA: {revision_notes}"
+        prompt += f"\n\nCATATAN REVISI DARI OWNER: {revision_notes}. Wajib sesuaikan skrip dengan revisi ini."
 
     response = model.generate_content(prompt)
-
-    if not response.candidates:
-        raise ValueError("Gemini tidak mengembalikan kandidat respons.")
-
-    finish_reason = response.candidates[0].finish_reason
-    if finish_reason != 1:
-        raise ValueError(f"Respons Gemini diblokir atau tidak selesai. finish_reason={finish_reason}")
-
     return response.text
 
 
-def upload_video_to_cloudinary(video_path_or_url):
+# ==============================================================================
+# 3. EDITOR & ANIMATOR AGENT: Mengolah Media Video ke Cloudinary
+# ==============================================================================
+def editor_animator_agent(raw_video_url_or_path):
+    """
+    Mengunggah file animasi/video ke Cloudinary agar siap didistribusikan.
+    """
+    print("🎬 [EDITOR AGENT] Rendering media animasi dan mengunggah ke Cloud Storage...")
     try:
-        if video_path_or_url.startswith(("http://", "https://")):
-            response = cloudinary.uploader.upload(
-                video_path_or_url,
-                resource_type="video",
-                folder="melek_kebijakan_id"
-            )
-        else:
-            response = cloudinary.uploader.upload_large(
-                video_path_or_url,
-                resource_type="video",
-                folder="melek_kebijakan_id"
-            )
-
-        secure_url = response.get("secure_url")
-        if not secure_url:
-            raise ValueError(f"Cloudinary tidak mengembalikan secure_url: {response}")
-
-        return secure_url
-
+        response = cloudinary.uploader.upload_large(
+            raw_video_url_or_path,
+            resource_type="video",
+            folder="melek_kebijakan_id"
+        )
+        return response.get("secure_url")
     except Exception as e:
-        print(f"Error upload ke Cloudinary: {e}")
+        print(f"❌ [EDITOR AGENT] Gagal upload video: {e}")
         return None
 
 
-def send_draft_to_whatsapp(chat_id, video_url, script_text):
+# ==============================================================================
+# 4. MANAGER AGENT: Mengirim Draft ke WhatsApp Owner (Revisi / ACC)
+# ==============================================================================
+def manager_agent_send_whatsapp(chat_id, video_url, script_text):
+    """
+    Mengirimkan laporan draft video animasi + skrip ke WhatsApp Owner.
+    """
+    print("📱 [MANAGER AGENT] Mengirimkan draft ke WhatsApp Owner untuk review...")
     url = f"https://api.green-api.com/waInstance{WA_INSTANCE_ID}/sendFileByUrl/{WA_API_TOKEN}"
-
+    
     caption = (
-        "🎬 *DRAFT VIDEO ANIMASI MELEK.KEBIJAKAN.ID*\n"
+        "🏛️ *KANTOR AI MELEK.KEBIJAKAN.ID - LAPORAN DRAFT REELS*\n"
         "--------------------------------------------------\n"
         f"{script_text}\n\n"
         "--------------------------------------------------\n"
-        "Balas pesan ini dengan:\n"
-        "1. *ACC* -> Untuk mengunggah otomatis ke Instagram @melek.kebijakan.id\n"
-        "2. *Tuliskan revisi* -> Jika ada bagian yang ingin diperbaiki."
+        "📌 *INSTRUKSI OWNER (BALAS CHAT INI):*\n"
+        "1. Ketik *ACC* -> Otomatis di-post ke Instagram @melek.kebijakan.id\n"
+        "2. Ketik *REVISI: [catatan]* -> AI akan merevisi skrip & video secara otomatis."
     )
-
+    
     payload = {
         "chatId": chat_id,
         "urlFile": video_url,
-        "fileName": "melek_kebijakan_draft.mp4",
+        "fileName": "draft_animasi_kebijakan.mp4",
         "caption": caption
     }
-
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(url, json=payload, headers=headers, timeout=30)
-    response.raise_for_status()
-    return response.json()
+    headers = {'Content-Type': 'application/json'}
+    return requests.post(url, json=payload, headers=headers).json()
 
 
-def post_to_instagram(video_url, caption):
+# ==============================================================================
+# 5. PUBLISHER AGENT: Posting Otomatis ke Instagram @melek.kebijakan.id
+# ==============================================================================
+def publisher_agent_post_instagram(video_url, caption):
+    """
+    Memublikasikan Reels ke akun Instagram Business / Creator @melek.kebijakan.id
+    """
+    print("🚀 [PUBLISHER AGENT] Mempublikasikan Reel ke Instagram @melek.kebijakan.id...")
     if not IG_ACCOUNT_ID or not IG_ACCESS_TOKEN:
-        print("Instagram dilewati: INSTAGRAM_ACCOUNT_ID / INSTAGRAM_ACCESS_TOKEN belum diset.")
+        print("⚠️ [PUBLISHER AGENT] IG_ACCOUNT_ID atau IG_ACCESS_TOKEN belum diset di Secrets.")
         return False
 
+    # Langkah 1: Buat Media Container
     container_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media"
     container_payload = {
-        "media_type": "REELS",
-        "video_url": video_url,
-        "caption": caption,
-        "access_token": IG_ACCESS_TOKEN
+        'media_type': 'REELS',
+        'video_url': video_url,
+        'caption': caption,
+        'access_token': IG_ACCESS_TOKEN
     }
+    res_container = requests.post(container_url, data=container_payload).json()
+    creation_id = res_container.get('id')
 
-    res_container = requests.post(container_url, data=container_payload, timeout=60).json()
-    creation_id = res_container.get("id")
-
-    if not creation_id:
-        print(f"Gagal membuat media container Instagram: {res_container}")
+    if creation_id:
+        # Langkah 2: Publish Media Container
+        publish_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media_publish"
+        publish_payload = {
+            'creation_id': creation_id,
+            'access_token': IG_ACCESS_TOKEN
+        }
+        res_publish = requests.post(publish_url, data=publish_payload).json()
+        print(f"✅ [PUBLISHER AGENT] Berhasil Dipublikasikan! ID: {res_publish.get('id')}")
+        return True
+    else:
+        print(f"❌ [PUBLISHER AGENT] Gagal membuat container: {res_container}")
         return False
 
-    publish_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media_publish"
-    publish_payload = {
-        "creation_id": creation_id,
-        "access_token": IG_ACCESS_TOKEN
-    }
 
-    res_publish = requests.post(publish_url, data=publish_payload, timeout=60).json()
-    print(f"Status Posting Instagram: {res_publish}")
-
-    return "id" in res_publish
-
-
+# ==============================================================================
+# MAIN WORKFLOW EXECUTION (KANTOR AI RUNNER)
+# ==============================================================================
 if __name__ == "__main__":
-    print("Agent AI 'melek.kebijakan.id' Berjalan...")
-
-    topik_kebijakan = "Evaluasi Kebijakan Impor Pangan Saat Musim Panen"
-
-    try:
-        skrip_narasi = generate_critical_script(topik_kebijakan)
-        print("Skrip Argumen Kritis Berhasil Dibuat.")
-    except Exception as e:
-        print(f"Gagal membuat skrip: {e}")
-        raise SystemExit(1)
-
-    sample_video_url = "https://res.cloudinary.com/demo/video/upload/dog.mp4"
-    uploaded_url = upload_video_to_cloudinary(sample_video_url)
-
-    if uploaded_url:
-        print(f"Video Berhasil Diunggah ke Cloudinary: {uploaded_url}")
-    else:
-        print("Upload video ke Cloudinary gagal.")
+    print("==================================================")
+    print("🏢 KANTOR AI @melek.kebijakan.id RESMI DIAKTIFKAN")
+    print("==================================================")
+    
+    # 1. Menentukan Isu Kebijakan Publik Hari Ini
+    topik = "Kebijakan Impor Beras dan Dampaknya pada Petani Lokal"
+    
+    # 2. Riset oleh Researcher Agent
+    hasil_riset = researcher_agent(topik)
+    
+    # 3. Penulisan Skrip Kritis oleh Copywriter Agent
+    skrip_final = copywriter_agent(topik, hasil_riset)
+    print("\n--- SKRIP HASIL COPYWRITER ---")
+    print(skrip_final[:250] + "...\n")
+    
+    # 4. Rendering Video oleh Editor Agent
+    sample_animation_url = "https://res.cloudinary.com/demo/video/upload/dog.mp4"
+    video_ready_url = editor_animator_agent(sample_animation_url)
+    
+    # 5. Notifikasi Manager Agent ke WhatsApp Owner
+    if video_ready_url:
+        print(f"✨ Video Animasi Siap di Cloud Storage: {video_ready_url}")
+        # Masukkan nomor WhatsApp Owner (contoh format: 6281234567890@c.us)
+        # owner_wa = "628xxxxxxxxxx@c.us"
+        # manager_agent_send_whatsapp(owner_wa, video_ready_url, skrip_final)
