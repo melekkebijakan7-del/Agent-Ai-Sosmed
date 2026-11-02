@@ -14,11 +14,7 @@ SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 WA_INSTANCE_ID = os.environ.get("WA_INSTANCE_ID")
 WA_API_TOKEN = os.environ.get("WA_API_TOKEN")
 
-# Social Media Meta Graph API Keys
-IG_ACCOUNT_ID = os.environ.get("INSTAGRAM_ACCOUNT_ID")
-IG_ACCESS_TOKEN = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
-
-# Nomor WhatsApp Penerima sesuai Dashboard Green API Anda
+# Nomor WhatsApp Pribadi Anda sebagai Penerima Draf (Format: 62 + nomor tanpa 0 di depan + @c.us)
 OWNER_WA_NUMBER = "6282361171427@c.us"
 
 cloudinary.config(
