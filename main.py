@@ -5,7 +5,6 @@ import requests
 import google.generativeai as genai
 import cloudinary
 import cloudinary.uploader
-from bs4 import BeautifulSoup
 
 # ==============================================================================
 # 0. KONFIGURASI ENVIRONMENT & AKSES GRATIS (Cloud Infrastructure)
