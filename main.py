@@ -44,7 +44,7 @@ def researcher_agent(topic_query):
 
 
 # ==========================================
-# 2. COPYWRITER AGENT (AUTO-FALLBACK MODEL)
+# 2. COPYWRITER AGENT (OTOMATIS DETEKSI MODEL)
 # ==========================================
 def copywriter_agent(topic, research_data):
     print("✍️ [COPYWRITER] Menyusun skrip argumen kritis...")
@@ -59,22 +59,33 @@ def copywriter_agent(topic, research_data):
     3. Sertakan caption dan hashtag di bagian akhir.
     """
     
-    # Daftar model resmi Google AI Studio
-    candidate_models = ['gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-1.5-pro']
-    
-    for model_name in candidate_models:
+    # Mengambil daftar model yang aktif secara otomatis dari Google API
+    available_models = []
+    try:
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                available_models.append(m.name)
+    except Exception as e:
+        print(f"⚠️ Gagal deteksi otomatis: {e}")
+        
+    if not available_models:
+        available_models = ['models/gemini-3.5-flash', 'models/gemini-1.5-flash']
+
+    print(f"📋 Model aktif yang ditemukan di akun Anda: {available_models}")
+
+    for model_name in available_models:
         try:
-            print(f"🔄 Mencoba dengan model: {model_name}...")
+            print(f"🔄 Memakai model: {model_name}...")
             model = genai.GenerativeModel(model_name)
             response = model.generate_content(prompt)
             if response and response.text:
                 print(f"✅ Berhasil generate menggunakan model: {model_name}")
                 return response.text
         except Exception as e:
-            print(f"⚠️ Model {model_name} gagal ({e}), mencoba model berikutnya...")
+            print(f"⚠️ Model {model_name} gagal: {e}")
             continue
             
-    raise RuntimeError("Semua cadangan model Gemini gagal merespons.")
+    raise RuntimeError("Semua model Gemini gagal merespons.")
 
 
 # ==========================================
