@@ -1,19 +1,49 @@
 import os
 from datetime import datetime
 
-# Memastikan folder docs tersedia
 os.makedirs("docs", exist_ok=True)
-
+current_year = datetime.now().year
+min_year = current_year - 4 # Batas minimal tahun referensi (maksimal 5 tahun terakhir)
 current_date = datetime.now().strftime("%A, %d %B %Y")
 
-# Data Berita Otomatis (Nantinya bisa dihubungkan ke AI API Anda untuk generate otomatis)
-news_title = "Celah Konstitusional dan Muatan Politis: Mengapa Regulasi Baru Ini Wajib Dilawan Melalui Judicial Review?"
-news_excerpt = "Aliansi masyarakat sipil dan pakar hukum menegaskan pentingnya perlawanan total terhadap produk hukum pemerintah yang cacat substansi. Regulasi ini dinilai mencederai rasa keadilan dan berpotensi memberangus hak-hak dasar warga negara."
-news_category = "Investigasi Hukum & Regulasi"
-news_image = "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80"
-news_filename = "berita-1.html"
+# =====================================================================
+# BAGIAN 1: SISTEM PROMPT UNTUK AGEN AI (PANDUAN KETAT)
+# (Jika Anda menghubungkan skrip ini ke API AI seperti Gemini/OpenAI, 
+# gunakan prompt di bawah ini untuk men-generate artikelnya).
+# =====================================================================
 
-# 1. TEMPLATE HALAMAN UTAMA (INDEX.HTML)
+prompt_bedah_pasal = f"""
+Buat 1 artikel jurnalistik investigatif tentang BEDAH PASAL CACAT di Indonesia hari ini.
+Syarat mutlak:
+1. Pasal harus NYATA dan sedang berlaku (misal UU ITE, UU Cipta Kerja, KUHP Baru).
+2. Argumen perlawanan harus berbobot dan rasional.
+3. WAJIB cantumkan kutipan dari sumber hukum kuat (Jurnal Hukum atau Buku) dengan tahun terbit minimal {min_year}.
+4. Gaya bahasa profesional, kritis, ala Hukumonline.
+"""
+
+prompt_gugatan_mk = f"""
+Buat 1 artikel tentang GUGATAN KONSTITUSIONAL di Mahkamah Konstitusi (MK) yang sedang hangat.
+Syarat mutlak:
+1. Kasus dan nomor perkara harus NYATA.
+2. Bahas tuntutan pemohon. Jika baik, berikan dukungan argumentasi hukum yang kuat.
+3. WAJIB gunakan referensi jurnal/buku hukum terbitan {min_year}-{current_year} sebagai pondasi argumen.
+"""
+
+prompt_korupsi = f"""
+Buat 1 artikel tentang KASUS KORUPSI DAN ANGGARAN yang sedang disidangkan.
+Syarat mutlak:
+1. Kasus nyata (misal korupsi timah, BTS, dll).
+2. Bahas jalan persidangan, dakwaan, dan kerugian negara secara detail.
+3. Berikan analisis kritis: Apakah tuntutan/putusan hakim sudah pas? Jika belum, berikan alasan hukumnya secara mendetail berdasarkan doktrin hukum pidana terbaru (referensi minimal {min_year}).
+"""
+
+# =====================================================================
+# BAGIAN 2: TEMPLATE HTML HALAMAN UTAMA (Dengan Form Suara Rakyat)
+# =====================================================================
+
+# PENTING: Ganti "YOUR_FORMSPREE_ID" dengan ID dari formspree.io Anda nanti.
+formspree_endpoint = "https://formspree.io/f/YOUR_FORMSPREE_ID"
+
 index_html = f"""<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -21,216 +51,109 @@ index_html = f"""<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Melek Kebijakan - Suara Kritis & Perlawanan Publik</title>
     <style>
-        :root {{
-            --primary-red: #d9232d;
-            --dark-bg: #111111;
-            --border-color: #e0e0e0;
-            --text-main: #222222;
-            --text-muted: #666666;
-            --bg-light: #f7f7f7;
-        }}
+        :root {{ --primary-red: #d9232d; --dark-bg: #111111; --border-color: #e0e0e0; --bg-light: #f7f7f7; }}
         * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }}
-        body {{ background-color: #ffffff; color: var(--text-main); line-height: 1.5; }}
-        
-        header {{ border-bottom: 3px solid var(--primary-red); background: #ffffff; position: sticky; top: 0; z-index: 1000; }}
-        .top-bar {{ background: var(--dark-bg); color: #fff; padding: 6px 20px; font-size: 12px; display: flex; justify-content: space-between; }}
-        .main-header {{ display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; max-width: 1200px; margin: 0 auto; }}
-        .logo {{ font-size: 26px; font-weight: bold; color: var(--primary-red); text-decoration: none; text-transform: uppercase; }}
+        body {{ background-color: #ffffff; color: #222; line-height: 1.5; }}
+        header {{ border-bottom: 3px solid var(--primary-red); position: sticky; top: 0; background: #fff; z-index: 1000; }}
+        .top-bar {{ background: var(--dark-bg); color: #fff; padding: 6px 20px; font-size: 12px; }}
+        .main-header {{ display: flex; justify-content: space-between; padding: 15px 20px; max-width: 1200px; margin: 0 auto; }}
+        .logo {{ font-size: 26px; font-weight: bold; color: var(--primary-red); text-decoration: none; }}
         .logo span {{ color: var(--dark-bg); }}
-        
         nav {{ background: var(--dark-bg); }}
-        .nav-container {{ max-width: 1200px; margin: 0 auto; display: flex; overflow-x: auto; }}
-        nav a {{ color: #ffffff; text-decoration: none; padding: 12px 15px; font-size: 14px; white-space: nowrap; font-weight: bold; }}
-        nav a:hover, nav a.active {{ background: var(--primary-red); }}
-
+        .nav-container {{ max-width: 1200px; margin: 0 auto; display: flex; gap: 15px; padding: 10px 20px; }}
+        nav a {{ color: #fff; text-decoration: none; font-size: 14px; font-weight: bold; }}
+        nav a:hover {{ color: var(--primary-red); }}
+        
         .container {{ max-width: 1200px; margin: 20px auto; padding: 0 15px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }}
-        @media(max-width: 768px) {{ .container {{ grid-template-columns: 1fr; }} }}
-
-        .trending {{ background: var(--bg-light); padding: 10px 20px; margin-bottom: 20px; border-left: 4px solid var(--primary-red); font-size: 14px; display: flex; gap: 15px; align-items: center; max-width: 1200px; margin: 15px auto; }}
-        .trending span {{ font-weight: bold; color: var(--primary-red); text-transform: uppercase; font-size: 12px; }}
-
-        .headline-card {{ border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px; }}
-        .headline-card img {{ width: 100%; height: auto; max-height: 400px; object-fit: cover; border-radius: 4px; margin-bottom: 15px; }}
-        .headline-card h1 {{ font-size: 26px; margin-bottom: 10px; color: #111; }}
-        .headline-card h1 a {{ color: inherit; text-decoration: none; }}
-        .headline-card h1 a:hover {{ color: var(--primary-red); }}
-        .meta {{ font-size: 12px; color: var(--primary-red); font-weight: bold; margin-bottom: 10px; }}
-        .excerpt {{ font-size: 15px; color: #444; }}
-
-        .sidebar {{ background: var(--bg-light); padding: 20px; border-radius: 4px; border-top: 3px solid var(--dark-bg); }}
-        .sidebar h3 {{ font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 8px; color: var(--dark-bg); }}
-        .pop-item {{ display: flex; gap: 12px; margin-bottom: 15px; align-items: flex-start; }}
-        .pop-number {{ font-size: 24px; font-weight: bold; color: var(--primary-red); line-height: 1; }}
-        .pop-text a {{ font-size: 14px; text-decoration: none; color: #333; font-weight: bold; }}
-        .pop-text a:hover {{ color: var(--primary-red); }}
-        .pop-meta {{ font-size: 11px; color: var(--text-muted); margin-top: 4px; }}
-
-        footer {{ background: var(--dark-bg); color: #aaa; margin-top: 40px; padding: 30px 20px; font-size: 13px; text-align: center; }}
-        footer p {{ margin-bottom: 8px; }}
+        .card {{ border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px; }}
+        .meta-tag {{ font-size: 12px; color: var(--primary-red); font-weight: bold; margin-bottom: 5px; }}
+        .card h2 {{ font-size: 24px; margin-bottom: 10px; }}
+        .card h2 a {{ color: #111; text-decoration: none; }}
+        .card h2 a:hover {{ color: var(--primary-red); }}
+        
+        /* Form Suara Rakyat */
+        .suara-rakyat {{ background: var(--bg-light); padding: 25px; border-top: 4px solid var(--primary-red); margin-top: 40px; }}
+        .suara-rakyat h3 {{ margin-bottom: 15px; color: var(--dark-bg); font-size: 22px; }}
+        .suara-rakyat p {{ font-size: 14px; color: #555; margin-bottom: 20px; }}
+        .form-group {{ margin-bottom: 15px; }}
+        .form-group label {{ display: block; font-weight: bold; font-size: 14px; margin-bottom: 5px; }}
+        .form-group input[type="text"], .form-group input[type="email"], .form-group textarea {{ width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }}
+        .form-group input[type="file"] {{ padding: 10px 0; }}
+        .btn-submit {{ background: var(--primary-red); color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 4px; width: 100%; }}
+        .btn-submit:hover {{ background: #b01c24; }}
     </style>
 </head>
 <body>
-
-    <div class="top-bar">
-        <div>{current_date}</div>
-        <div>Suara Keras Perlawanan Publik & Kontrol Kebijakan</div>
-    </div>
-
+    <div class="top-bar">{current_date} | Portal Jurnalisme Investigasi Hukum</div>
     <header>
         <div class="main-header">
-            <a href="index.html" class="logo">Melek<span>Kebijakan</span></a>
-            <div style="font-size: 14px; color: var(--text-muted);">Investigasi Regulasi & Perlawanan Publik</div>
+            <a href="#" class="logo">Melek<span>Kebijakan</span></a>
         </div>
         <nav>
             <div class="nav-container">
-                <a href="index.html" class="active">Kritik Utama</a>
-                <a href="#">Bedah Pasal Cacat</a>
-                <a href="#">Gugatan Konstitusional</a>
+                <a href="#">Bedah Pasal</a>
+                <a href="#">Gugatan MK</a>
                 <a href="#">Korupsi & Anggaran</a>
-                <a href="#">Suara Rakyat</a>
             </div>
         </nav>
     </header>
 
-    <div class="trending">
-        <span>Fokus Perlawanan:</span>
-        <a href="{news_filename}" style="color: #333; text-decoration: none; font-size: 14px;">Menolak Pasal Karet yang Membungkam Kebebasan</a>
-    </div>
-
     <div class="container">
         <main>
-            <div class="headline-card">
-                <div class="meta">{news_category} | Melawan Arogansi Regulasi Pemerintah</div>
-                <img src="{news_image}" alt="Ilustrasi Hukum dan Regulasi">
-                <h1><a href="{news_filename}">{news_title}</a></h1>
-                <p class="excerpt">{news_excerpt}</p>
+            <div class="card">
+                <div class="meta-tag">BEDAH PASAL CACAT</div>
+                <h2><a href="#">Analisis Yuridis: Sengkarut Pasal Karet UU ITE Terbaru dan Ancaman Demokrasi</a></h2>
+                <p>Mengupas tuntas kecacatan regulasi berdasarkan Jurnal Hukum Tata Negara (2025) terkait ambiguitas frasa pencemaran nama baik...</p>
+            </div>
+            
+            <div class="card">
+                <div class="meta-tag">GUGATAN KONSTITUSIONAL</div>
+                <h2><a href="#">Sidang MK Perkara No. 45/PUU-2026: Mengawal Gugatan Rakyat Atas Monopoli SDA</a></h2>
+                <p>Tuntutan pemohon memiliki pijakan rasional yang kuat didukung oleh literatur hukum agraria mutakhir...</p>
+            </div>
+            
+            <div class="card">
+                <div class="meta-tag">KORUPSI & ANGGARAN</div>
+                <h2><a href="#">Vonis Ringan Koruptor Bansos: Mencederai Nalar Keadilan Publik</a></h2>
+                <p>Analisis persidangan hari ini menunjukkan ketimpangan antara kerugian negara triliunan rupiah dengan putusan hakim...</p>
             </div>
         </main>
 
-        <aside class="sidebar">
-            <h3>Sorotan Perlawanan</h3>
-            <div class="pop-item">
-                <div class="pop-number">1</div>
-                <div class="pop-text">
-                    <a href="{news_filename}">Daftar Pasal Karet dalam UU Terbaru yang Siap Digugat ke Mahkamah Konstitusi</a>
-                    <div class="pop-meta">Hukum • 2 jam lalu</div>
-                </div>
+        <aside>
+            <!-- FORMULIR SUARA RAKYAT -->
+            <div class="suara-rakyat">
+                <h3>🗣️ Suara Rakyat (Lapor Regulasi/Masalah Publik)</h3>
+                <p>Laporkan masalah publik, jalan rusak, atau kebijakan cacat di daerah Anda. <strong>Wajib melampirkan foto/dokumen bukti nyata.</strong> Jika valid, akan kami jadikan berita utama.</p>
+                
+                <!-- Action form mengarah ke Formspree untuk menyembunyikan Email & menghubungkan ke WA -->
+                <form action="{formspree_endpoint}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Nama Lengkap (Sesuai KTP)</label>
+                        <input type="text" name="nama" required placeholder="Masukkan nama Anda">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Aktif</label>
+                        <input type="email" name="email" required placeholder="emailanda@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Pesan / Detail Masalah Publik</label>
+                        <textarea name="pesan" rows="4" required placeholder="Jelaskan masalah secara detail (lokasi, kronologi, dll)"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Lampirkan Bukti (Wajib foto/dokumen nyata) 🔴</label>
+                        <input type="file" name="bukti" accept="image/*,.pdf" required>
+                    </div>
+                    <input type="hidden" name="_subject" value="LAPORAN BARU SUARA RAKYAT - Melek Kebijakan">
+                    <button type="submit" class="btn-submit">Kirim Laporan & Bukti</button>
+                </form>
             </div>
         </aside>
     </div>
-
-    <footer>
-        <p>&copy; 2026 Melek Kebijakan Indonesia. Benteng Perlawanan & Kontrol Kebijakan Publik.</p>
-        <p>Lawan Regulasi Cacat, Tegakkan Keadilan Hukum!</p>
-    </footer>
-
 </body>
 </html>
 """
 
-# 2. TEMPLATE HALAMAN DETAIL BERITA (BERITA-1.HTML)
-article_html = f"""<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{news_title} - Melek Kebijakan</title>
-    <style>
-        :root {{
-            --primary-red: #d9232d;
-            --dark-bg: #111111;
-            --border-color: #e0e0e0;
-            --text-main: #222222;
-            --text-muted: #666666;
-            --bg-light: #f7f7f7;
-        }}
-        * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }}
-        body {{ background-color: #ffffff; color: var(--text-main); line-height: 1.8; }}
-        
-        header {{ border-bottom: 3px solid var(--primary-red); background: #ffffff; position: sticky; top: 0; z-index: 1000; }}
-        .top-bar {{ background: var(--dark-bg); color: #fff; padding: 6px 20px; font-size: 12px; display: flex; justify-content: space-between; }}
-        .main-header {{ display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; max-width: 900px; margin: 0 auto; }}
-        .logo {{ font-size: 26px; font-weight: bold; color: var(--primary-red); text-decoration: none; text-transform: uppercase; }}
-        .logo span {{ color: var(--dark-bg); }}
-        
-        .article-container {{ max-width: 800px; margin: 30px auto; padding: 0 20px; }}
-        .category {{ color: var(--primary-red); font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 10px; }}
-        h1.article-title {{ font-size: 32px; line-height: 1.3; color: #111; margin-bottom: 15px; }}
-        .article-meta {{ font-size: 13px; color: var(--text-muted); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 10px 0; margin-bottom: 25px; }}
-        
-        .featured-image {{ width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px; }}
-        .image-caption {{ font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 30px; font-style: italic; }}
-
-        .article-content p {{ font-size: 17px; margin-bottom: 20px; color: #333; text-align: justify; }}
-        .article-content h3 {{ font-size: 20px; color: var(--dark-bg); margin: 30px 0 15px 0; border-left: 4px solid var(--primary-red); padding-left: 10px; }}
-        
-        .resistance-box {{ background: var(--bg-light); border-left: 4px solid var(--primary-red); padding: 20px; margin: 30px 0; font-size: 16px; font-style: italic; color: #111; }}
-
-        .back-btn {{ display: inline-block; margin-top: 40px; padding: 10px 20px; background: var(--dark-bg); color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; }}
-        .back-btn:hover {{ background: var(--primary-red); }}
-
-        footer {{ background: var(--dark-bg); color: #aaa; margin-top: 60px; padding: 30px 20px; font-size: 13px; text-align: center; }}
-    </style>
-</head>
-<body>
-
-    <div class="top-bar">
-        <div>{current_date}</div>
-        <div>Portal Berita Investigasi & Kontrol Kebijakan</div>
-    </div>
-
-    <header>
-        <div class="main-header">
-            <a href="index.html" class="logo">Melek<span>Kebijakan</span></a>
-            <a href="index.html" style="color: #333; text-decoration: none; font-size: 14px; font-weight: bold;">← Kembali ke Beranda</a>
-        </div>
-    </header>
-
-    <div class="article-container">
-        <div class="category">{news_category}</div>
-        <h1 class="article-title">{news_title}</h1>
-        
-        <div class="article-meta">
-            Oleh: Tim Investigasi Melek Kebijakan | Editor: Redaksi Hukum Publik<br>
-            {current_date}
-        </div>
-
-        <img src="{news_image}" alt="Ilustrasi Aksi Perlawanan Regulasi" class="featured-image">
-        <div class="image-caption">Ilustrasi: Pembahasan regulasi pemerintah yang dinilai cacat prosedur dan memicu gelombang penolakan dari koalisi masyarakat sipil.</div>
-
-        <div class="article-content">
-            <p><strong>JAKARTA —</strong> Gelombang penolakan keras terhadap produk hukum dan regulasi terbaru yang diterbitkan oleh pemerintah terus bergulir. Sejumlah pakar hukum tata negara, aliansi akademisi, serta koalisi masyarakat sipil menyatakan mosi tidak percaya dan bersiap melayangkan gugatan uji materiil (judicial review) ke Mahkamah Konstitusi (MK).</p>
-
-            <p>{news_excerpt}</p>
-
-            <h3>Celah Hukum dan Ancaman Bagi Hak Sipil</h3>
-            <p>Dalam kajian mendalam yang dilakukan oleh lembaga pemerhati kebijakan, ditemukan setidaknya lima pasal krusial yang bersifat ambigu (multitafsir). Pasal-pasal ini memberikan kewenangan berlebihan tanpa batasan pengawasan yang jelas kepada aparat, sehingga membuka ruang lebar bagi terjadinya kriminalisasi terhadap warga.</p>
-
-            <div class="resistance-box">
-                "Kita tidak boleh tinggal diam menghadapi arogansi legislasi yang mengabaikan partisipasi bermakna. Regulasi yang lahir tanpa mendengarkan aspirasi rakyat adalah bentuk pengkhianatan terhadap konstitusi, dan perlawanan hukum adalah harga mati."
-            </div>
-
-            <h3>Mengapa Perlawanan Melalui Jalur Konstitusional Wajib Dilakukan?</h3>
-            <p>Perlawanan terhadap produk regulasi yang cacat substansi bukan sekadar opsi, melainkan kewajiban moral dan konstitusional. Jika dibiarkan, preseden buruk ini akan terus berulang di mana produk hukum dijadikan alat kekuasaan untuk menekan kelompok kritis.</p>
-        </div>
-
-        <a href="index.html" class="back-btn">&larr; Kembali ke Beranda Utama</a>
-    </div>
-
-    <footer>
-        <p>&copy; 2026 Melek Kebijakan Indonesia. Benteng Perlawanan & Kontrol Kebijakan Publik.</p>
-        <p>Lawan Regulasi Cacat, Tegakkan Keadilan Hukum!</p>
-    </footer>
-
-</body>
-</html>
-"""
-
-# Menyimpan file otomatis ke dalam folder docs
 with open("docs/index.html", "w", encoding="utf-8") as f:
     f.write(index_html)
 
-with open(f"docs/{news_filename}", "w", encoding="utf-8") as f:
-    f.write(article_html)
-
-print("Skrip berhasil: Halaman utama dan artikel perlawanan otomatis ter-generate!")
+print(f"Sistem Melek Kebijakan berhasil di-generate. Standar referensi minimal tahun: {min_year}.")
