@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # IZIN PENTING agar agen bisa otomatis commit & push file ke GitHub
+  contents: write
 
 jobs:
   run-agent:
@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # <--- Ini pengaman utama agar proses 'git pull' dan 'git push' tidak pernah error merah lagi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,6 +27,13 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html
-          git commit -m "Auto-update portal berita Melek Kebijakan [skip ci]" || echo "No changes to commit"
-          git push
+          
+          # Menarik data terbaru dari GitHub agar sinkron dan tidak tabrakan
+          git pull origin main --rebase || true
+          
+          # Menyimpan perubahan file HTML
+          git add docs/
+          git commit -m "Auto-update Berita Investigasi MELEK.KEBIJAKAN.ID [skip ci]" || echo "No changes to commit"
+          
+          # Mendorong perubahan ke website
+          git push origin main
