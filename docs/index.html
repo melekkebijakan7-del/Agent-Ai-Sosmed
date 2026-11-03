@@ -2,15 +2,159 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Melek Kebijakan - Portal Berita AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melek Kebijakan - Portal Berita & Analisis Terpercaya</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding-top: 50px; background: #f4f4f9; }
-        h1 { color: #333; }
-        p { color: #666; }
+        :root {
+            --primary-red: #d9232d;
+            --dark-bg: #111111;
+            --border-color: #e0e0e0;
+            --text-main: #222222;
+            --text-muted: #666666;
+            --bg-light: #f7f7f7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background-color: #ffffff; color: var(--text-main); line-height: 1.5; }
+        
+        /* Top Header & Navbar */
+        header { border-bottom: 3px solid var(--primary-red); background: #ffffff; position: sticky; top: 0; z-index: 1000; }
+        .top-bar { background: var(--dark-bg); color: #fff; padding: 6px 20px; font-size: 12px; display: flex; justify-content: space-between; }
+        .main-header { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; max-width: 1200px; margin: 0 auto; }
+        .logo { font-size: 26px; font-weight: bold; color: var(--primary-red); text-decoration: None; text-transform: uppercase; }
+        .logo span { color: var(--dark-bg); }
+        
+        nav { background: var(--dark-bg); }
+        .nav-container { max-width: 1200px; margin: 0 auto; display: flex; overflow-x: auto; }
+        nav a { color: #ffffff; text-decoration: none; padding: 12px 15px; font-size: 14px; white-space: nowrap; font-weight: bold; }
+        nav a:hover, nav a.active { background: var(--primary-red); }
+
+        /* Container Utama */
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        @media(max-width: 768px) { .container { grid-template-columns: 1fr; } }
+
+        /* Trending Bar */
+        .trending { background: var(--bg-light); padding: 10px 20px; margin-bottom: 20px; border-left: 4px solid var(--primary-red); font-size: 14px; display: flex; gap: 15px; align-items: center; max-width: 1200px; margin: 15px auto; }
+        .trending span { font-weight: bold; color: var(--primary-red); text-transform: uppercase; font-size: 12px; }
+
+        /* Main Headline Section */
+        .headline-card { border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px; }
+        .headline-card h1 { font-size: 28px; margin-bottom: 10px; color: #111; }
+        .headline-card h1 a { color: inherit; text-decoration: none; }
+        .headline-card h1 a:hover { color: var(--primary-red); }
+        .meta { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+        .excerpt { font-size: 15px; color: #444; }
+
+        /* Sub News List */
+        .sub-news { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .sub-item { border-top: 1px solid var(--border-color); padding-top: 15px; }
+        .sub-item h3 { font-size: 16px; margin-bottom: 8px; }
+        .sub-item h3 a { color: #222; text-decoration: none; }
+        .sub-item h3 a:hover { color: var(--primary-red); }
+
+        /* Sidebar Terpopuler */
+        .sidebar { background: var(--bg-light); padding: 20px; border-radius: 4px; border-top: 3px solid var(--dark-bg); }
+        .sidebar h3 { font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 8px; color: var(--dark-bg); }
+        .pop-item { display: flex; gap: 12px; margin-bottom: 15px; align-items: flex-start; }
+        .pop-number { font-size: 24px; font-weight: bold; color: var(--primary-red); line-height: 1; }
+        .pop-text a { font-size: 14px; text-decoration: none; color: #333; font-weight: bold; }
+        .pop-text a:hover { color: var(--primary-red); }
+        .pop-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+        /* Footer */
+        footer { background: var(--dark-bg); color: #aaa; margin-top: 40px; padding: 30px 20px; font-size: 13px; text-align: center; }
+        footer p { margin-bottom: 8px; }
     </style>
 </head>
 <body>
-    <h1>Portal Berita Melek Kebijakan Berhasil Aktif!</h1>
-    <p>Sistem AI dan GitHub Pages berhasil terhubung dengan sempurna.</p>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div>Tuesday, 03 November 2026</div>
+        <div>Gabung Melek Kebijakan+</div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="main-header">
+            <a href="#" class="logo">Melek<span>Kebijakan</span></a>
+            <div style="font-size: 14px; color: var(--text-muted);">Jernih Melihat Kebijakan Publik</div>
+        </div>
+        <nav>
+            <div class="nav-container">
+                <a href="#" class="active">News</a>
+                <a href="#">Nasional</a>
+                <a href="#">Edukasi</a>
+                <a href="#">Hukum & Politik</a>
+                <a href="#">Ekonomi</a>
+                <a href="#">Kolom</a>
+                <a href="#">Tren</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Trending Banner -->
+    <div class="trending">
+        <span>Trending:</span>
+        <a href="#" style="color: #333; text-decoration: none; font-size: 14px;">Reformasi Kebijakan Publik 2026</a> • 
+        <a href="#" style="color: #333; text-decoration: none; font-size: 14px;">Transparansi Anggaran Negara</a>
+    </div>
+
+    <!-- Content Layout -->
+    <div class="container">
+        <!-- Main News Column -->
+        <main>
+            <div class="headline-card">
+                <div class="meta">NASIONAL | Tuesday, 03 November 2026</div>
+                <h1><a href="#">Pemerintah Perkuat Transparansi Kebijakan Fiskal untuk Kesejahteraan Masyarakat</a></h1>
+                <p class="excerpt">Pemerintah menegaskan komitmennya dalam mengawal transparansi anggaran serta regulasi baru yang berfokus pada pemerataan ekonomi dan perlindungan hak-hak masyarakat luas di Indonesia.</p>
+            </div>
+
+            <div class="sub-news">
+                <div class="sub-item">
+                    <div class="meta">HUKUM</div>
+                    <h3><a href="#">Analisis Kritis: Urgensi Pembaruan Regulasi Perlindungan Data di Era Digital</a></h3>
+                    <p style="font-size: 13px; color: #666;">Pakar hukum tata negara menyoroti pentingnya penegakan hukum yang adaptif terhadap perkembangan teknologi modern.</p>
+                </div>
+                <div class="sub-item">
+                    <div class="meta">EDUKASI</div>
+                    <h3><a href="#">Program Beasiswa Riset Kebijakan Publik Resmi Dibuka Bulan Ini</a></h3>
+                    <p style="font-size: 13px; color: #666;">Kesempatan emas bagi akademisi muda untuk berkontribusi memberikan kajian mendalam terkait kebijakan nasional.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Sidebar Terpopuler -->
+        <aside class="sidebar">
+            <h3>Terpopuler</h3>
+            <div class="pop-item">
+                <div class="pop-number">1</div>
+                <div class="pop-text">
+                    <a href="#">Daftar Kebijakan Baru yang Berlaku Efektif Mulai Bulan Ini, Simak Rinciannya</a>
+                    <div class="pop-meta">Nasional • 1 jam lalu</div>
+                </div>
+            </div>
+            <div class="pop-item">
+                <div class="pop-number">2</div>
+                <div class="pop-text">
+                    <a href="#">Mengupas Substansi UU Terbaru: Apa Dampaknya bagi Pelaku Usaha Lokal?</a>
+                    <div class="pop-meta">Hukum • 3 jam lalu</div>
+                </div>
+            </div>
+            <div class="pop-item">
+                <div class="pop-number">3</div>
+                <div class="pop-text">
+                    <a href="#">Diskusi Publik: Menakar Efektivitas Subsidi Tepat Sasaran di Indonesia</a>
+                    <div class="pop-meta">Ekonomi • 5 jam lalu</div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Melek Kebijakan Indonesia. All Rights Reserved.</p>
+        <p>Jernih Melihat Fakta, Tajam Mengawal Kebijakan Publik.</p>
+    </footer>
+
 </body>
 </html>
