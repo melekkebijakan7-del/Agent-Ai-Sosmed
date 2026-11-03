@@ -65,7 +65,6 @@ index_template = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>melek.kebijakan.id - Portal Jurnalisme Investigasi & Analisis Hukum</title>
     <style>
-        /* CSS Modern: Palet Warna & Animasi */
         :root { 
             --primary-red: #c61a22; 
             --dark-navy: #1e293b; 
@@ -75,4 +74,24 @@ index_template = """<!DOCTYPE html>
             --border-color: #e2e8f0;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color
+        body { background-color: var(--light-bg); color: var(--text-main); line-height: 1.6; overflow-x: hidden; }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        
+        header { background: var(--dark-navy); box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .top-bar { background: var(--primary-red); color: #fff; padding: 10px 20px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; display: flex; justify-content: space-between; }
+        .main-header { display: flex; justify-content: space-between; padding: 20px; max-width: 1200px; margin: 0 auto; align-items: center; }
+        
+        .logo { font-size: 30px; font-weight: 900; color: #ffffff; text-decoration: none; letter-spacing: -1px; display: flex; align-items: center; gap: 5px; }
+        .logo span { color: var(--primary-red); }
+        .header-tagline { color: #94a3b8; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-left: 2px solid var(--primary-red); padding-left: 15px; }
+        
+        nav { background: #0f172a; border-top: 1px solid rgba(255,255,255,0.1); }
+        .nav-container { max-width
+        
